@@ -1,0 +1,70 @@
+/* Centering the content on the whole page using Flexbox */
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;             /* Use Flexbox */
+    justify-content: center;    /* Horizontal centering */
+    align-items: center;        /* Vertical centering */
+    min-height: 100vh;          /* Full height of the viewport */
+    background-color: #f4f4f9;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Exercise Requirement: Add borders, padding, and margins */
+.product-card {
+    background-color: #ffffff;
+    width: 280px;
+    padding: 20px;             /* Internal spacing */
+    margin: 20px;              /* External spacing */
+    border: 1px solid #ddd;    /* Card border */
+    border-radius: 12px;
+    text-align: center;
+    
+    /* Exercise Requirement: Apply box-shadow */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); 
+    
+    transition: transform 0.3s ease;
+}
+
+.product-img {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.product-title {
+    color: #333;
+    margin: 10px 0;
+}
+
+.product-desc {
+    color: #666;
+    font-size: 0.9rem;
+    padding: 0 10px;
+    margin-bottom: 15px;
+}
+
+.product-price {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 20px;
+}
+
+/* Exercise Requirement: Style the button with hover effects */
+.buy-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;   /* Transition for smooth hover animation */
+}
+
+.buy-btn:hover {
+    background-color: #0056b3;   /* Color change on hover */
+    transform: scale(1.05);      /* Slight grow effect */
+    box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+}
