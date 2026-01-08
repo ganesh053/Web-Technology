@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .board { display: flex; gap: 10px; }
+        .column { width: 200px; min-height: 300px; background: #f4f4f4; padding: 10px; border: 1px solid #ccc; }
+        .task-card { 
+            background: white; border: 1px solid #999; padding: 10px; margin-bottom: 5px; 
+            cursor: move; border-radius: 4px; 
+        }
+        .completed-task { background: #d4edda !important; }
+    </style>
+</head>
+<body>
+    <input type="text" id="taskInput" placeholder="Enter task name">
+    <button onclick="addTask()">Add Task</button>
+
+    <div class="board">
+        <div class="column" id="todo" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h4>To Do</h4>
+        </div>
+        <div class="column" id="progress" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h4>In Progress</h4>
+        </div>
+        <div class="column" id="completed" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h4>Completed</h4>
+        </div>
+    </div>
+
+    <script>
+        function allowDrop(ev) { ev.preventDefault(); }
+
+        function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+
+        function drop(ev) {
+            ev.preventDefault();
+            var data = ev.dataTransfer.getData("text");
+            var task = document.getElementById(data);
+            var targetCol = ev.target.closest('.column');
+            
+            if (targetCol) {
+                targetCol.appendChild(task);
+                if (targetCol.id === 'completed') {
+                    task.classList.add('completed-task');
+                    alert("Task Completed Successfully"); [cite_start]// Requirement [cite: 27]
+                } else {
+                    task.classList.remove('completed-task');
+                }
+            }
+        }
+
+        function addTask() {
+            let name = document.getElementById('taskInput').value;
+            if (!name) return;
+            let id = "task-" + Date.now();
+            let date = new Date().toLocaleDateString();
+            
+            let card = document.createElement("div");
+            card.className = "task-card";
+            card.id = id;
+            card.draggable = true;
+            card.ondragstart = drag;
+            card.innerHTML = `<strong>${name}</strong><br><small>${date}</small>`;
+            
+            document.getElementById('todo').appendChild(card);
+            document.getElementById('taskInput').value = "";
+        }
+    </script>
+</body>
+</html>
