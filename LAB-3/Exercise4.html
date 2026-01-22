@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Activity Monitor</title>
+    <style>
+        :root { --primary: #2563eb; --warning: #f59e0b; --danger: #dc2626; --bg: #0f172a; }
+        body { font-family: 'Courier New', monospace; background: var(--bg); color: #e2e8f0; padding: 20px; display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
+        
+        .monitor-area { background: #1e293b; padding: 40px; border-radius: 12px; border: 2px dashed #334155; text-align: center; }
+        .input-test { padding: 12px; width: 80%; border-radius: 6px; border: none; margin-top: 20px; }
+        
+        .log-panel { background: #111827; padding: 15px; border-radius: 12px; border: 1px solid #334155; height: 85vh; display: flex; flex-direction: column; }
+        .log-list { flex-grow: 1; overflow-y: auto; font-size: 0.8rem; margin: 10px 0; border: 1px solid #1e293b; padding: 5px; }
+        
+        .log-entry { padding: 4px 8px; border-bottom: 1px solid #1e293b; color: #94a3b8; }
+        .log-entry.click { color: #60a5fa; }
+        .log-entry.keypress { color: #34d399; }
+        .log-entry.warning { background: rgba(220, 38, 38, 0.2); color: var(--danger); font-weight: bold; }
+
+        .controls { display: flex; gap: 10px; }
+        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; flex: 1; }
+        .reset-btn { background: #475569; color: white; }
+        .export-btn { background: var(--primary); color: white; }
+        
+        #alertBanner { position: fixed; top: 0; left: 0; width: 100%; background: var(--danger); color: white; text-align: center; padding: 10px; display: none; z-index: 100; }
+    </style>
+</head>
+<body>
+
+<div id="alertBanner">⚠️ SUSPICIOUS ACTIVITY DETECTED: EXCESSIVE CLICKING ⚠️</div>
+
+<div class="monitor-area" id="captureZone">
+    <h2>Interactive Capture Zone</h2>
+    <p>Every click, keypress, and focus change here is monitored.</p>
+    <input type="text" class="input-test" id="testInput" placeholder="Type something or click around...">
+    <div style="margin-top:20px;">
+        <button class="btn export-btn">Nested Button 1</button>
+        <button class="btn export-btn">Nested Button 2</button>
+    </div>
+</div>
+
+<div class="log-panel">
+    <h3>Activity Log</h3>
+    <div class="log-list" id="logList"></div>
+    <div class="controls">
+        <button class="btn reset-btn" onclick="resetLog()">Reset</button>
+        <button class="btn export-btn" onclick="exportLog()">Export TXT</button>
+    </div>
+</div>
+
+<script>
+    // 1. Activity Store & Thresholds
+    let activityLog = [];
+    let clickCounter = 0;
+    const CLICK_THRESHOLD = 10; // Warning if > 10 clicks in 5 seconds
+    const logList = document.getElementById('logList');
+    const captureZone = document.getElementById('captureZone');
+
+    // 2. Event Logger Function
+    function logActivity(type, target, detail = "") {
+        const entry = {
+            timestamp: new Date().toLocaleTimeString(),
+            type: type,
+            target: target,
+            detail: detail
+        };
+        
+        activityLog.push(entry);
+        renderLogEntry(entry);
+        checkSuspiciousActivity();
+    }
+
+    // 3. Rendering to DOM
+    function renderLogEntry(entry) {
+        const div = document.createElement('div');
+        div.className = `log-entry ${entry.type.toLowerCase()}`;
+        div.innerText = `[${entry.timestamp}] ${entry.type.toUpperCase()}: <${entry.target}> ${entry.detail}`;
+        logList.prepend(div); // Newest on top
+    }
+
+    // 4. Capturing & Bubbling (The Monitoring Engine)
+    
+    // CAPTURING Phase (Track events as they go DOWN)
+    window.addEventListener('focus', (e) => {
+        logActivity('focus', e.target.tagName, `Focused ${e.target.id || 'element'}`);
+    }, true); // 'true' enables capture phase
+
+    // BUBBLING Phase (Track events as they go UP)
+    document.addEventListener('click', (e) => {
+        clickCounter++;
+        logActivity('click', e.target.tagName, `ID: ${e.target.id || 'N/A'}`);
+        
+        // Reset click counter every 5 seconds to detect "burst" clicking
+        setTimeout(() => clickCounter = Math.max(0, clickCounter - 1), 5000);
+    });
+
+    document.addEventListener('keydown', (e) => {
+        logActivity('keypress', 'WINDOW', `Key: ${e.key}`);
+    });
+
+    // 5. Suspicious Activity Detection
+    function checkSuspiciousActivity() {
+        const banner = document.getElementById('alertBanner');
+        if (clickCounter > CLICK_THRESHOLD) {
+            banner.style.display = 'block';
+            if (!activityLog[activityLog.length-1].isWarning) {
+                const warnEntry = { timestamp: "!!!", type: "warning", target: "SYSTEM", detail: "THROTTLING DETECTED", isWarning: true };
+                activityLog.push(warnEntry);
+                renderLogEntry(warnEntry);
+            }
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
+    // 6. Reset & Export
+    function resetLog() {
+        activityLog = [];
+        clickCounter = 0;
+        logList.innerHTML = '';
+        document.getElementById('alertBanner').style.display = 'none';
+    }
+
+    function exportLog() {
+        const text = activityLog.map(e => `[${e.timestamp}] ${e.type}: ${e.target} - ${e.detail}`).join('\n');
+        const blob = new Blob([text], { type: 'text/plain' });
+        const anchor = document.createElement('a');
+        anchor.download = 'user_activity.txt';
+        anchor.href = window.URL.createObjectURL(blob);
+        anchor.click();
+    }
+</script>
+
+</body>
+</html>
