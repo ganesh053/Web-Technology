@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive Registration System</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --error: #e74c3c;
+            --success: #2ecc71;
+            --bg: #f4f7f6;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 40px; }
+        
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        
+        h2 { margin-top: 0; color: #333; text-align: center; }
+        
+        .form-group { margin-bottom: 15px; }
+        
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
+        
+        input, select { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; box-sizing: border-box; transition: all 0.3s ease; }
+        
+        input:focus { border-color: var(--primary); outline: none; }
+        
+        .invalid { border-color: var(--error) !important; background-color: #fffafa; }
+        
+        .hint { font-size: 0.75rem; color: #666; margin-top: 4px; display: block; }
+        
+        .error-msg { color: var(--error); font-size: 0.75rem; margin-top: 4px; min-height: 1em; }
+
+        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; font-weight: bold; margin-top: 10px; }
+        
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        #formFeedback { text-align: center; margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>User Registration</h2>
+    <form id="regForm" novalidate>
+        
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="name" placeholder="John Doe">
+        </div>
+
+        <div class="form-group">
+            <label>Role</label>
+            <select id="role">
+                <option value="Student">Student</option>
+                <option value="Teacher">Teacher</option>
+                <option value="Admin">Admin</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email" placeholder="email@domain.com">
+            <span class="hint" id="emailHint">Must end with @edu.com</span>
+        </div>
+
+        <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="age" placeholder="Min age varies by role">
+        </div>
+
+        <div class="form-group" id="skillsWrapper">
+            <label>Skills</label>
+            <input type="text" id="skills" placeholder="e.g. JavaScript, Python">
+        </div>
+
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="Password">
+            <span class="hint" id="pwHint">Min 6 characters</span>
+        </div>
+
+        <div class="form-group">
+            <label>Confirm Password</label>
+            <input type="password" id="confirmPassword" placeholder="Repeat password">
+        </div>
+
+        <button type="submit" id="submitBtn">Create Account</button>
+        <div id="formFeedback"></div>
+    </form>
+</div>
+
+<script>
+    const form = document.getElementById('regForm');
+    const roleSelect = document.getElementById('role');
+    const skillsWrapper = document.getElementById('skillsWrapper');
+    const feedback = document.getElementById('formFeedback');
+
+    // Configuration for Dynamic Validation
+    const roleConfig = {
+        Student: {
+            minAge: 13,
+            domain: "edu.com",
+            pwRegex: /^.{6,}$/,
+            pwText: "Min 6 characters",
+            showSkills: true
+        },
+        Teacher: {
+            minAge: 21,
+            domain: "school.org",
+            pwRegex: /^.{8,}$/,
+            pwText: "Min 8 characters",
+            showSkills: true
+        },
+        Admin: {
+            minAge: 25,
+            domain: "admin.com",
+            pwRegex: /^(?=.*[A-Z])(?=.*\d).{10,}$/,
+            pwText: "Min 10 chars, 1 Uppercase, 1 Number",
+            showSkills: false
+        }
+    };
+
+    // DOM Elements to validate
+    const fields = {
+        name: document.getElementById('name'),
+        email: document.getElementById('email'),
+        age: document.getElementById('age'),
+        password: document.getElementById('password'),
+        confirm: document.getElementById('confirmPassword')
+    };
+
+    // Update UI when role changes
+    roleSelect.addEventListener('change', () => {
+        const config = roleConfig[roleSelect.value];
+        
+        // Toggle fields
+        skillsWrapper.style.display = config.showSkills ? 'block' : 'none';
+        
+        // Update hints
+        document.getElementById('emailHint').innerText = `Must end with @${config.domain}`;
+        document.getElementById('pwHint').innerText = config.pwText;
+        
+        validate(); // Re-run validation logic
+    });
+
+    // Main Validation Function
+    function validate() {
+        const role = roleSelect.value;
+        const config = roleConfig[role];
+        let isFormValid = true;
+
+        // 1. Validate Name (Not empty)
+        if (fields.name.value.trim().length < 2) {
+            setInvalid(fields.name);
+            isFormValid = false;
+        } else {
+            setValid(fields.name);
+        }
+
+        // 2. Validate Email Domain
+        if (!fields.email.value.toLowerCase().endsWith(`@${config.domain}`)) {
+            setInvalid(fields.email);
+            isFormValid = false;
+        } else {
+            setValid(fields.email);
+        }
+
+        // 3. Validate Age
+        if (parseInt(fields.age.value) < config.minAge || !fields.age.value) {
+            setInvalid(fields.age);
+            isFormValid = false;
+        } else {
+            setValid(fields.age);
+        }
+
+        // 4. Validate Password Strength
+        if (!config.pwRegex.test(fields.password.value)) {
+            setInvalid(fields.password);
+            isFormValid = false;
+        } else {
+            setValid(fields.password);
+        }
+
+        // 5. Validate Password Match
+        if (fields.confirm.value !== fields.password.value || fields.confirm.value === "") {
+            setInvalid(fields.confirm);
+            isFormValid = false;
+        } else {
+            setValid(fields.confirm);
+        }
+
+        return isFormValid;
+    }
+
+    // Helper: Style changes for feedback
+    function setInvalid(el) { el.classList.add('invalid'); }
+    function setValid(el) { el.classList.remove('invalid'); }
+
+    // Event Listeners for Real-Time feedback
+    form.addEventListener('input', validate);
+
+    // Prevent form submission if invalid
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        if (validate()) {
+            feedback.innerText = "✓ Success! Registration complete.";
+            feedback.style.color = "var(--success)";
+            form.reset();
+            // Reset UI state after reset
+            roleSelect.dispatchEvent(new Event('change'));
+        } else {
+            feedback.innerText = "× Please correct the errors above.";
+            feedback.style.color = "var(--error)";
+        }
+    });
+</script>
+
+</body>
+</html>
