@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AJAX Weather Dashboard (Hardcoded)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            text-align: center;
+            padding-top: 50px;
+        }
+
+        .container {
+            background: white;
+            width: 400px;
+            margin: auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+
+        input {
+            padding: 10px;
+            width: 70%;
+        }
+
+        button {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        .spinner {
+            display: none;
+            margin-top: 15px;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+
+        .weather-box {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Weather Dashboard</h2>
+
+    <input type="text" id="cityInput" placeholder="Enter city name">
+    <button onclick="getWeather()">Search</button>
+
+    <div class="spinner" id="spinner">Loading...</div>
+    <div id="error" class="error"></div>
+    <div id="result"></div>
+</div>
+
+<script>
+
+    // Hardcoded Weather Data (Simulated API Response)
+    const weatherDatabase = {
+        "vijayawada": {
+            name: "Vijayawada",
+            main: { temp: 32, humidity: 65 },
+            weather: [{ description: "Sunny" }]
+        },
+        "hyderabad": {
+            name: "Hyderabad",
+            main: { temp: 28, humidity: 70 },
+            weather: [{ description: "Cloudy" }]
+        },
+        "chennai": {
+            name: "Chennai",
+            main: { temp: 34, humidity: 75 },
+            weather: [{ description: "Humid and Clear" }]
+        }
+    };
+
+    let cachedCity = "";
+    let cachedData = null;
+
+    function getWeather() {
+
+        const city = document.getElementById("cityInput").value.trim().toLowerCase();
+        const resultDiv = document.getElementById("result");
+        const errorDiv = document.getElementById("error");
+        const spinner = document.getElementById("spinner");
+
+        errorDiv.innerHTML = "";
+        resultDiv.innerHTML = "";
+
+        if (city === "") {
+            errorDiv.innerHTML = "Please enter a city name.";
+            return;
+        }
+
+        // Check cache
+        if (city === cachedCity) {
+            displayWeather(cachedData);
+            return;
+        }
+
+        spinner.style.display = "block";
+
+        // Simulate AJAX request using XMLHttpRequest
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", "fake_weather_api.json", true);
+
+        xhr.onload = function () {
+
+            spinner.style.display = "none";
+
+            // Simulate network failure randomly (10% chance)
+            if (Math.random() < 0.1) {
+                errorDiv.innerHTML = "Network error occurred.";
+                return;
+            }
+
+            if (weatherDatabase[city]) {
+
+                const response = weatherDatabase[city];
+
+                // Simulate JSON parsing
+                const jsonData = JSON.parse(JSON.stringify(response));
+
+                cachedCity = city;
+                cachedData = jsonData;
+
+                displayWeather(jsonData);
+
+            } else {
+                errorDiv.innerHTML = "City not found.";
+            }
+        };
+
+        xhr.onerror = function () {
+            spinner.style.display = "none";
+            errorDiv.innerHTML = "Network error occurred.";
+        };
+
+        // Simulate delay like real API
+        setTimeout(() => {
+            xhr.onload();
+        }, 1000);
+    }
+
+    function displayWeather(data) {
+
+        const resultDiv = document.getElementById("result");
+
+        resultDiv.innerHTML = `
+            <div class="weather-box">
+                <h3>${data.name}</h3>
+                <p><strong>Temperature:</strong> ${data.main.temp} °C</p>
+                <p><strong>Humidity:</strong> ${data.main.humidity}%</p>
+                <p><strong>Condition:</strong> ${data.weather[0].description}</p>
+            </div>
+        `;
+    }
+
+</script>
+
+</body>
+</html>
