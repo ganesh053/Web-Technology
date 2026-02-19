@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Library Book Tracker</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        button { margin: 3px; }
+        .message { margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h2>Library Book Tracker (XML + AJAX + DOM)</h2>
+
+<h3>Add / Update Book</h3>
+ID: <input type="text" id="bookId">
+Title: <input type="text" id="bookTitle">
+Author: <input type="text" id="bookAuthor">
+Status:
+<select id="bookStatus">
+    <option value="Available">Available</option>
+    <option value="Not Available">Not Available</option>
+</select>
+
+<button onclick="addBook()">Add</button>
+<button onclick="updateBook()">Update Status</button>
+
+<h3>Book List</h3>
+<button onclick="loadBooks()">Load Books</button>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody id="bookTable"></tbody>
+</table>
+
+<div class="message" id="message"></div>
+
+<script>
+
+let xmlDoc = null;
+
+function showMessage(msg, error=false) {
+    const m = document.getElementById("message");
+    m.style.color = error ? "red" : "green";
+    m.innerText = msg;
+}
+
+function loadBooks() {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", "books.xml", true);
+
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                xmlDoc = xhr.responseXML;
+                if (!xmlDoc) throw "Malformed XML";
+                displayBooks();
+                showMessage("Books loaded successfully.");
+            } catch (e) {
+                showMessage("Error parsing XML: " + e, true);
+            }
+        } else {
+            showMessage("Failed to load XML file.", true);
+        }
+    };
+
+    xhr.onerror = function() {
+        showMessage("Network error occurred.", true);
+    };
+
+    xhr.send();
+}
+
+function displayBooks() {
+    const table = document.getElementById("bookTable");
+    table.innerHTML = "";
+
+    const books = xmlDoc.getElementsByTagName("book");
+
+    if (books.length === 0) {
+        showMessage("No books found.", true);
+        return;
+    }
+
+    for (let i = 0; i < books.length; i++) {
+        const id = books[i].getElementsByTagName("id")[0].textContent;
+        const title = books[i].getElementsByTagName("title")[0].textContent;
+        const author = books[i].getElementsByTagName("author")[0].textContent;
+        const status = books[i].getElementsByTagName("status")[0].textContent;
+
+        table.innerHTML += `
+            <tr>
+                <td>${id}</td>
+                <td>${title}</td>
+                <td>${author}</td>
+                <td>${status}</td>
+                <td><button onclick="deleteBook('${id}')">Delete</button></td>
+            </tr>
+        `;
+    }
+}
+
+function validateInputs(id, title, author) {
+    if (!id || isNaN(id)) {
+        showMessage("Valid numeric Book ID required.", true);
+        return false;
+    }
+    if (title && title.length < 2) {
+        showMessage("Title must be at least 2 characters.", true);
+        return false;
+    }
+    if (author && author.length < 2) {
+        showMessage("Author must be at least 2 characters.", true);
+        return false;
+    }
+    return true;
+}
+
+function addBook() {
+    if (!xmlDoc) return showMessage("Load XML first!", true);
+
+    const id = bookId.value.trim();
+    const title = bookTitle.value.trim();
+    const author = bookAuthor.value.trim();
+    const status = bookStatus.value;
+
+    if (!validateInputs(id, title, author)) return;
+
+    const books = xmlDoc.getElementsByTagName("book");
+
+    for (let i = 0; i < books.length; i++) {
+        if (books[i].getElementsByTagName("id")[0].textContent === id) {
+            return showMessage("Book ID already exists.", true);
+        }
+    }
+
+    const newBook = xmlDoc.createElement("book");
+
+    const fields = {id, title, author, status};
+
+    for (let key in fields) {
+        const element = xmlDoc.createElement(key);
+        element.appendChild(xmlDoc.createTextNode(fields[key]));
+        newBook.appendChild(element);
+    }
+
+    xmlDoc.documentElement.appendChild(newBook);
+
+    displayBooks();
+    showMessage("Book added successfully.");
+}
+
+function updateBook() {
+    if (!xmlDoc) return showMessage("Load XML first!", true);
+
+    const id = bookId.value.trim();
+    const status = bookStatus.value;
+
+    if (!validateInputs(id, "aa", "aa")) return;
+
+    const books = xmlDoc.getElementsByTagName("book");
+
+    for (let i = 0; i < books.length; i++) {
+        if (books[i].getElementsByTagName("id")[0].textContent === id) {
+
+            books[i].getElementsByTagName("status")[0].textContent = status;
+
+            displayBooks();
+            return showMessage("Book status updated.");
+        }
+    }
+
+    showMessage("Book not found.", true);
+}
+
+function deleteBook(id) {
+    const books = xmlDoc.getElementsByTagName("book");
+
+    for (let i = 0; i < books.length; i++) {
+        if (books[i].getElementsByTagName("id")[0].textContent === id) {
+            xmlDoc.documentElement.removeChild(books[i]);
+            displayBooks();
+            return showMessage("Book deleted successfully.");
+        }
+    }
+
+    showMessage("Book not found.", true);
+}
+
+</script>
+
+</body>
+</html>

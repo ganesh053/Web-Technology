@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Product Inventory System</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        button { margin: 3px; }
+        .low-stock { background-color: #ffcccc; }
+        .message { margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h2>Product Inventory System (JSON + Fetch)</h2>
+
+<h3>Add / Edit Product</h3>
+ID: <input type="text" id="prodId">
+Name: <input type="text" id="prodName">
+Category: <input type="text" id="prodCategory">
+Price: <input type="text" id="prodPrice">
+Stock: <input type="text" id="prodStock">
+
+<button onclick="addProduct()">Add</button>
+<button onclick="updateProduct()">Update</button>
+
+<h3>Search by Category</h3>
+<input type="text" id="searchCategory">
+<button onclick="searchProduct()">Search</button>
+<button onclick="displayProducts()">Reset</button>
+
+<h3>Inventory List</h3>
+<button onclick="loadProducts()">Load Inventory</button>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Total Value</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody id="inventoryTable"></tbody>
+</table>
+
+<h3>Total Inventory Value: ₹ <span id="totalValue">0</span></h3>
+
+<div class="message" id="message"></div>
+
+<script>
+
+let products = [];
+
+function showMessage(msg, error=false) {
+    const m = document.getElementById("message");
+    m.style.color = error ? "red" : "green";
+    m.innerText = msg;
+}
+
+async function loadProducts() {
+    try {
+        const response = await fetch("inventory.json");
+
+        if (!response.ok) throw "Failed to fetch JSON";
+
+        products = await response.json();
+        displayProducts();
+        showMessage("Inventory loaded successfully.");
+
+    } catch (error) {
+        showMessage("Error loading JSON: " + error, true);
+    }
+}
+
+function displayProducts(filteredList = products) {
+    const table = document.getElementById("inventoryTable");
+    table.innerHTML = "";
+
+    let totalInventoryValue = 0;
+
+    filteredList.forEach(product => {
+
+        const totalValue = product.price * product.stock;
+        totalInventoryValue += totalValue;
+
+        const rowClass = product.stock < 5 ? "low-stock" : "";
+
+        table.innerHTML += `
+            <tr class="${rowClass}">
+                <td>${product.id}</td>
+                <td>${product.name}</td>
+                <td>${product.category}</td>
+                <td>${product.price}</td>
+                <td>${product.stock}</td>
+                <td>${totalValue}</td>
+                <td>
+                    <button onclick="deleteProduct(${product.id})">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    document.getElementById("totalValue").innerText = totalInventoryValue;
+}
+
+function validateInputs(id, name, category, price, stock) {
+
+    if (!id || isNaN(id)) return showMessage("Valid numeric ID required.", true), false;
+    if (!name || name.length < 2) return showMessage("Valid name required.", true), false;
+    if (!category || category.length < 2) return showMessage("Valid category required.", true), false;
+    if (!price || isNaN(price) || price <= 0) return showMessage("Price must be positive.", true), false;
+    if (!stock || isNaN(stock) || stock < 0) return showMessage("Stock must be 0 or more.", true), false;
+
+    return true;
+}
+
+function addProduct() {
+
+    const id = parseInt(prodId.value.trim());
+    const name = prodName.value.trim();
+    const category = prodCategory.value.trim();
+    const price = parseFloat(prodPrice.value.trim());
+    const stock = parseInt(prodStock.value.trim());
+
+    if (!validateInputs(id, name, category, price, stock)) return;
+
+    if (products.some(p => p.id === id))
+        return showMessage("Product ID already exists.", true);
+
+    products.push({ id, name, category, price, stock });
+
+    displayProducts();
+    showMessage("Product added successfully.");
+}
+
+function updateProduct() {
+
+    const id = parseInt(prodId.value.trim());
+    const price = parseFloat(prodPrice.value.trim());
+    const stock = parseInt(prodStock.value.trim());
+
+    const product = products.find(p => p.id === id);
+
+    if (!product) return showMessage("Product not found.", true);
+
+    if (!isNaN(price) && price > 0) product.price = price;
+    if (!isNaN(stock) && stock >= 0) product.stock = stock;
+
+    displayProducts();
+    showMessage("Product updated successfully.");
+}
+
+function deleteProduct(id) {
+
+    const index = products.findIndex(p => p.id === id);
+
+    if (index === -1) return showMessage("Product not found.", true);
+
+    products.splice(index, 1);
+
+    displayProducts();
+    showMessage("Product deleted successfully.");
+}
+
+function searchProduct() {
+
+    const category = searchCategory.value.trim().toLowerCase();
+
+    if (!category)
+        return showMessage("Enter category to search.", true);
+
+    const filtered = products.filter(p =>
+        p.category.toLowerCase() === category
+    );
+
+    if (filtered.length === 0)
+        showMessage("No products found in this category.", true);
+
+    displayProducts(filtered);
+}
+
+</script>
+
+</body>
+</html>

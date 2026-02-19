@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Record System (JSON + Fetch)</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        button { margin: 3px; }
+        .message { margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h2>Student Record System (JSON + Fetch API)</h2>
+
+<h3>Add / Update Student</h3>
+ID: <input type="text" id="studentId">
+Name: <input type="text" id="studentName">
+Course: <input type="text" id="studentCourse">
+Marks: <input type="text" id="studentMarks">
+
+<button onclick="addStudent()">Add</button>
+<button onclick="updateStudent()">Update</button>
+
+<h3>Student List</h3>
+<button onclick="loadStudents()">Load Students</button>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Course</th>
+            <th>Marks</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody id="studentTable"></tbody>
+</table>
+
+<div class="message" id="message"></div>
+
+<script>
+
+let students = [];
+
+function showMessage(msg, error=false) {
+    const m = document.getElementById("message");
+    m.style.color = error ? "red" : "green";
+    m.innerText = msg;
+}
+
+async function loadStudents() {
+    try {
+        const response = await fetch("students.json");
+
+        if (!response.ok) throw "Failed to fetch JSON";
+
+        students = await response.json(); // parse JSON
+
+        displayStudents();
+        showMessage("Students loaded successfully.");
+
+    } catch (error) {
+        showMessage("Error loading JSON: " + error, true);
+    }
+}
+
+function displayStudents() {
+    const table = document.getElementById("studentTable");
+    table.innerHTML = "";
+
+    if (students.length === 0) {
+        showMessage("No students found.", true);
+        return;
+    }
+
+    students.forEach(student => {
+        table.innerHTML += `
+            <tr>
+                <td>${student.id}</td>
+                <td>${student.name}</td>
+                <td>${student.course}</td>
+                <td>${student.marks}</td>
+                <td>
+                    <button onclick="deleteStudent(${student.id})">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function validateInputs(id, name, course, marks) {
+
+    if (!id || isNaN(id)) {
+        showMessage("Valid numeric ID required.", true);
+        return false;
+    }
+
+    if (!name || name.length < 2) {
+        showMessage("Name must be at least 2 characters.", true);
+        return false;
+    }
+
+    if (!course || course.length < 2) {
+        showMessage("Course must be valid.", true);
+        return false;
+    }
+
+    if (!marks || isNaN(marks) || marks < 0 || marks > 100) {
+        showMessage("Marks must be between 0 and 100.", true);
+        return false;
+    }
+
+    return true;
+}
+
+function addStudent() {
+
+    const id = parseInt(studentId.value.trim());
+    const name = studentName.value.trim();
+    const course = studentCourse.value.trim();
+    const marks = parseInt(studentMarks.value.trim());
+
+    if (!validateInputs(id, name, course, marks)) return;
+
+    if (students.some(s => s.id === id)) {
+        return showMessage("Student ID already exists.", true);
+    }
+
+    students.push({ id, name, course, marks });
+
+    displayStudents();
+    showMessage("Student added successfully.");
+}
+
+function updateStudent() {
+
+    const id = parseInt(studentId.value.trim());
+    const course = studentCourse.value.trim();
+    const marks = parseInt(studentMarks.value.trim());
+
+    const student = students.find(s => s.id === id);
+
+    if (!student) return showMessage("Student not found.", true);
+
+    if (course) student.course = course;
+    if (!isNaN(marks)) student.marks = marks;
+
+    displayStudents();
+    showMessage("Student updated successfully.");
+}
+
+function deleteStudent(id) {
+
+    const index = students.findIndex(s => s.id === id);
+
+    if (index === -1) return showMessage("Student not found.", true);
+
+    students.splice(index, 1);
+
+    displayStudents();
+    showMessage("Student deleted successfully.");
+}
+
+</script>
+
+</body>
+</html>
