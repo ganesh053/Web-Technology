@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Username Checker</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        .form-group { margin-bottom: 15px; position: relative; max-width: 300px; }
+        input { padding: 8px; width: 100%; box-sizing: border-box; }
+        
+        #feedback { font-size: 0.85rem; margin-top: 5px; min-height: 1.2em; }
+        .success { color: green; }
+        .error { color: red; }
+        
+        /* Simple Loading Spinner */
+        #loader {
+            display: none;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <h2>Sign Up</h2>
+    <form id="registrationForm">
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" placeholder="Type a username..." autocomplete="off" required>
+            <div id="loader" class="hidden"></div>
+            <div id="feedback"></div>
+        </div>
+
+        <button type="submit" id="submitBtn" disabled>Register</button>
+    </form>
+
+    <script>
+        const usernameInput = document.getElementById('username');
+        const feedback = document.getElementById('feedback');
+        const loader = document.getElementById('loader');
+        const submitBtn = document.getElementById('submitBtn');
+        const form = document.getElementById('registrationForm');
+
+        let debounceTimer;
+
+        usernameInput.addEventListener('input', () => {
+            const username = usernameInput.value.trim();
+            
+            // Reset state immediately on typing
+            feedback.textContent = '';
+            submitBtn.disabled = true;
+            loader.classList.add('hidden');
+
+            if (username.length < 3) {
+                if(username.length > 0) feedback.textContent = "Too short...";
+                return;
+            }
+
+            // Wait 300ms after user stops typing to fetch
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => validateUsername(username), 300);
+        });
+
+        async function validateUsername(name) {
+            loader.classList.remove('hidden');
+            
+            try {
+                // Fetching the local JSON file
+                const response = await fetch('users.json');
+                if (!response.ok) throw new Error("Could not load user data");
+                
+                const data = await response.json();
+                
+                // Simulate a slight network delay (optional)
+                await new Promise(res => setTimeout(res, 400));
+
+                const isTaken = data.takenUsernames.some(u => u.toLowerCase() === name.toLowerCase());
+
+                if (isTaken) {
+                    feedback.textContent = "❌ Username already taken";
+                    feedback.className = "error";
+                    submitBtn.disabled = true;
+                } else {
+                    feedback.textContent = "✅ Username available";
+                    feedback.className = "success";
+                    submitBtn.disabled = false;
+                }
+            } catch (err) {
+                feedback.textContent = "Validation unavailable (Check console)";
+                console.error(err);
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        // Prevent submission if the user tries to bypass the UI
+        form.addEventListener('submit', (e) => {
+            if (submitBtn.disabled) {
+                e.preventDefault();
+                alert("Please select an available username.");
+            } else {
+                e.preventDefault();
+                alert("Form submitted successfully!");
+            }
+        });
+    </script>
+</body>
+</html>

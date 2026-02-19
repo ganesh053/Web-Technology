@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Product Search</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 30px; background: #f4f7f6; }
+        .search-container { max-width: 600px; margin: 0 auto; }
+        
+        input#searchQuery {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        #resultsTable {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        #resultsTable th, #resultsTable td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        #status { margin-top: 10px; font-style: italic; color: #666; }
+        .no-results { color: #e74c3c; font-weight: bold; padding: 20px; text-align: center; }
+        .error { color: #c0392b; background: #f9d6d5; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="search-container">
+    <h2>Product Catalog</h2>
+    <input type="text" id="searchQuery" placeholder="Search by name or category..." autocomplete="off">
+    <div id="status"></div>
+
+    <table id="resultsTable" style="display: none;">
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Category</th>
+            </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+    </table>
+</div>
+
+<script>
+    const searchInput = document.getElementById('searchQuery');
+    const resultsTable = document.getElementById('resultsTable');
+    const resultsBody = document.getElementById('resultsBody');
+    const status = document.getElementById('status');
+
+    let debounceTimer;
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim().toLowerCase();
+        
+        // Reset view if input is empty
+        if (!query) {
+            resultsTable.style.display = 'none';
+            status.textContent = '';
+            return;
+        }
+
+        // Debouncing: Delay the "API" call by 400ms
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            fetchProducts(query);
+        }, 400);
+    });
+
+    async function fetchProducts(query) {
+        status.textContent = "Searching...";
+        
+        try {
+            const response = await fetch('products.json');
+            
+            if (!response.ok) throw new Error("Server error: Could not fetch products.");
+            
+            const products = await response.json();
+
+            // Filter logic (simulating server-side filtering)
+            const matches = products.filter(p => 
+                p.name.toLowerCase().includes(query) || 
+                p.category.toLowerCase().includes(query)
+            );
+
+            displayResults(matches);
+
+        } catch (err) {
+            status.innerHTML = `<span class="error">${err.message}</span>`;
+            resultsTable.style.display = 'none';
+        }
+    }
+
+    function displayResults(matches) {
+        resultsBody.innerHTML = ''; // Clear previous
+        status.textContent = '';
+
+        if (matches.length === 0) {
+            status.innerHTML = '<div class="no-results">No results found matching your search.</div>';
+            resultsTable.style.display = 'none';
+            return;
+        }
+
+        // Build the table rows dynamically
+        matches.forEach(product => {
+            const row = `
+                <tr>
+                    <td><strong>${product.name}</strong></td>
+                    <td>${product.price}</td>
+                    <td>${product.category}</td>
+                </tr>
+            `;
+            resultsBody.innerHTML += row;
+        });
+
+        resultsTable.style.display = 'table';
+    }
+</script>
+
+</body>
+</html>

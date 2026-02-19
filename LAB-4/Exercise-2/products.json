@@ -1,0 +1,7 @@
+[
+  { "name": "Wireless Mouse", "price": "$25", "category": "Electronics" },
+  { "name": "Mechanical Keyboard", "price": "$80", "category": "Electronics" },
+  { "name": "Coffee Mug", "price": "$12", "category": "Kitchenware" },
+  { "name": "Leather Journal", "price": "$18", "category": "Stationery" },
+  { "name": "Gaming Headset", "price": "$60", "category": "Electronics" }
+]

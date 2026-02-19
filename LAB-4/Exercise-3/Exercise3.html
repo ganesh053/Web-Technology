@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AJAX Student CRUD</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; display: flex; gap: 20px; }
+        .form-section { flex: 1; border: 1px solid #ddd; padding: 15px; border-radius: 8px; height: fit-content; }
+        .table-section { flex: 2; }
+        input { display: block; width: 100%; margin: 10px 0; padding: 8px; box-sizing: border-box; }
+        button { padding: 10px 15px; cursor: pointer; border: none; border-radius: 4px; }
+        .btn-add { background: #28a745; color: white; }
+        .btn-update { background: #ffc107; display: none; }
+        .btn-delete { background: #dc3545; color: white; padding: 5px; }
+        .btn-edit { background: #007bff; color: white; padding: 5px; margin-right: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        #message { margin-top: 10px; padding: 10px; border-radius: 4px; display: none; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+
+<div class="form-section">
+    <h3>Student Details</h3>
+    <input type="text" id="studentId" placeholder="Student ID (Unique)">
+    <input type="text" id="studentName" placeholder="Full Name">
+    <input type="text" id="dept" placeholder="Department">
+    <input type="number" id="marks" placeholder="Marks">
+    
+    <button id="addBtn" class="btn-add">Add Student</button>
+    <button id="updateBtn" class="btn-update">Update Student</button>
+    <div id="message"></div>
+</div>
+
+<div class="table-section">
+    <h3>Student List</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Dept</th>
+                <th>Marks</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="studentTableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    let students = []; // Local state representing the "database"
+
+    // 1. READ: Initial Fetch using Fetch API
+    async function loadStudents() {
+        try {
+            const response = await fetch('students.json');
+            if (response.status === 404) throw new Error("File Not Found (404)");
+            if (response.status === 500) throw new Error("Server Error (500)");
+            
+            students = await response.json();
+            renderTable();
+            showMessage("Students loaded successfully", "success");
+        } catch (err) {
+            showMessage(err.message, "error");
+        }
+    }
+
+    // 2. CREATE: Add new student
+    document.getElementById('addBtn').addEventListener('click', () => {
+        const id = document.getElementById('studentId').value;
+        const name = document.getElementById('studentName').value;
+        const dept = document.getElementById('dept').value;
+        const marks = document.getElementById('marks').value;
+
+        if (!id || !name) return showMessage("ID and Name are required", "error");
+
+        const newStudent = { id, name, dept, marks };
+        students.push(newStudent); // Simulating server-side post
+        renderTable();
+        clearForm();
+        showMessage("Student added successfully", "success");
+    });
+
+    // 3. UPDATE & DELETE Logic
+    function renderTable() {
+        const tbody = document.getElementById('studentTableBody');
+        tbody.innerHTML = '';
+
+        students.forEach((s, index) => {
+            const row = `<tr>
+                <td>${s.id}</td>
+                <td>${s.name}</td>
+                <td>${s.dept}</td>
+                <td>${s.marks}</td>
+                <td>
+                    <button class="btn-edit" onclick="editStudent('${s.id}')">Edit</button>
+                    <button class="btn-delete" onclick="deleteStudent(${index})">Delete</button>
+                </td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    function deleteStudent(index) {
+        if(confirm("Are you sure?")) {
+            students.splice(index, 1); // Simulating DELETE request
+            renderTable();
+            showMessage("Record deleted", "success");
+        }
+    }
+
+    function editStudent(id) {
+        const s = students.find(std => std.id === id);
+        document.getElementById('studentId').value = s.id;
+        document.getElementById('studentId').disabled = true; // ID shouldn't change
+        document.getElementById('studentName').value = s.name;
+        document.getElementById('dept').value = s.dept;
+        document.getElementById('marks').value = s.marks;
+
+        document.getElementById('addBtn').style.display = 'none';
+        document.getElementById('updateBtn').style.display = 'inline-block';
+        
+        document.getElementById('updateBtn').onclick = () => {
+            s.name = document.getElementById('studentName').value;
+            s.dept = document.getElementById('dept').value;
+            s.marks = document.getElementById('marks').value;
+            
+            renderTable();
+            clearForm();
+            showMessage("Student updated", "success");
+            
+            document.getElementById('addBtn').style.display = 'inline-block';
+            document.getElementById('updateBtn').style.display = 'none';
+            document.getElementById('studentId').disabled = false;
+        };
+    }
+
+    // Helpers
+    function showMessage(msg, type) {
+        const el = document.getElementById('message');
+        el.textContent = msg;
+        el.className = type;
+        el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 3000);
+    }
+
+    function clearForm() {
+        document.querySelectorAll('input').forEach(i => i.value = '');
+    }
+
+    // Initialize
+    loadStudents();
+</script>
+</body>
+</html>
