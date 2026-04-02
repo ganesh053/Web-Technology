@@ -1,0 +1,8 @@
+{
+  "name": "exercise-1",
+  "version": "0.1.0",
+  "dependencies": {
+    "react": "...",
+    "react-dom": "..."
+  }
+}
